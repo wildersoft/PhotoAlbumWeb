@@ -2,7 +2,93 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+    <div class="text-center">
+        <p>Choose an album.</p>
+        <div style="align-items:baseline">
+            <Select id="albums" onchange="clearPhotoTable()" style="width: 800px;">
+            </Select>
+            <button onclick="showAlbum()">Show Album</button>
+        </div>
+        <div id="photoTable" style="width:800px; height:300px; border: 1px solid #000; overflow: auto">
+        </div>
+        <div id="comments" style="width:600px; height:200px; border: 1px solid #000; overflow: auto">
+        </div>
+    </div>
+@section scripts
+{
+    <script>
+        $.ajax({
+            type: "GET",
+            url: `/Albums/`,
+            dataType: "json",
+            contentType: "application/json",
+            cache: true,
+            success: function (jsonData) {
+                var albumsSelect = $('#albums');
+                jsonData.forEach(function (item) {
+                    albumsSelect.append(`<option value ='${item.id}'>${item.title}</option>`);
+                });
+            },
+            error: function (err) {
+                console.log(err);
+                alert('Some problem was found, please try again later.');
+            }
+        });
+
+        function clearPhotoTable() {
+            $('#photoTable').empty();
+            $('#comments').empty();
+        }
+
+        function showAlbum() {
+            var id = $("#albums").val();
+            $.ajax({
+                type: "GET",
+                url: `/Photos/${id}`,
+                dataType: "json",
+                contentType: "application/json",
+                cache: false,
+                success: function (jsonData) {
+                    var photoTable = $('#photoTable');
+                    photoTable.empty();
+                    var counter = 0;
+                    jsonData.forEach(function (item) {
+                        photoTable.append(`<div class='col-sm-3'><span>${item.title}</span><table><tr><td><img width='250' src='${item.thumbnailUrl}'/></td><td><button onclick='showComments(${item.id})' >See comments...</button></td></tr></table></div>`);
+                    });
+            },
+                error: function (err) {
+                    console.log(err);
+                    alert('Some problem was found, please try again later.');
+                }
+            })
+        }
+
+        function showComments(postId) {
+            var comments = $('#comments');
+            comments.empty();
+            $.ajax({
+                type: "GET",
+                url: `/Comments/${postId}`,
+                dataType: "json",
+                contentType: "application/json",
+                cache: false,
+                success: function (jsonData) {
+                    if (jsonData.length == 0) {
+                        comments.append(`<div>No Comments</div>`);
+                    }
+                    else {
+                        jsonData.forEach(function (item) {
+                            comments.append(`<label style='border: 1px thin #000;'>#${item.id}${item.name}'</label> <label><strong>${item.email}</strong></label> <div>${item.body}</div></hr>`);
+                        });
+                    }
+                },
+                error: function (err) {
+                    console.log(err);
+                    alert('Some problem was found, please try again later.');
+                }
+            })
+        }
+
+
+    </script>
+}
